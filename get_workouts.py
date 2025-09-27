@@ -1,8 +1,8 @@
 import json
 from whoop import WhoopClient
 
-username = "olapis"
-password = "1106Olha@"
+username = "olapisetska@gmail.com"
+password = "11072000Olha@"
 
 start_date="2024-12-14 23:59:59.999999"
 
