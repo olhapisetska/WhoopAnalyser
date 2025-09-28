@@ -2,91 +2,101 @@ import os
 import json
 import secrets
 import string
-import requests
 from authlib.integrations.requests_client import OAuth2Session
 
 AUTH_URL = "https://api.prod.whoop.com/oauth/oauth2/auth"
 TOKEN_URL = "https://api.prod.whoop.com/oauth/oauth2/token"
-BASE_URL = "https://api.prod.whoop.com/developer/v2"
-
-CLIENT_ID = os.getenv("WHOOP_CLIENT_ID")
-CLIENT_SECRET = os.getenv("WHOOP_CLIENT_SECRET")
-REDIRECT_URI = "http://localhost:8080/callback"
+API_BASE_URL = "https://api.prod.whoop.com/developer/v2"
 
 
 class WhoopClient:
-    def __init__(self):
-        self.session = OAuth2Session(
-            client_id=CLIENT_ID,
-            client_secret=CLIENT_SECRET,
-            redirect_uri=REDIRECT_URI,
-            scope="offline read:profile read:workout read:sleep read:recovery",
-            code_challenge_method="S256",
-        )
-        self.state = None
-        self.code_verifier = None
+    def __init__(self, client_id, client_secret, redirect_uri, scope=None):
+        self.client_id = client_id
+        self.client_secret = client_secret
+        self.redirect_uri = redirect_uri
+        self.scope = scope or "offline read:profile read:workout read:sleep read:recovery"
 
-        # Try to load token if already saved
-        if os.path.exists("token.json"):
-            with open("token.json", "r") as f:
-                token = json.load(f)
-            self.session.token = token
+        # Generate PKCE code_verifier
+        self.code_verifier = "".join(
+            secrets.choice(string.ascii_letters + string.digits) for _ in range(64)
+        )
+
+        # OAuth2 session
+        self.session = OAuth2Session(
+            client_id=self.client_id,
+            redirect_uri=self.redirect_uri,
+            scope=self.scope,
+            code_challenge_method="S256",
+            code_verifier=self.code_verifier,
+        )
 
     def create_authorization_url(self):
-        uri, state = self.session.create_authorization_url(
-            AUTH_URL, code_verifier=self._gen_code_verifier()
-        )
-        self.state = state
-        return uri
+        uri, state = self.session.create_authorization_url(AUTH_URL)
+        return uri, state
 
     def fetch_token(self, authorization_response):
         token = self.session.fetch_token(
             url=TOKEN_URL,
             authorization_response=authorization_response,
+            client_secret=self.client_secret,
             code_verifier=self.code_verifier,
         )
         with open("token.json", "w") as f:
-            json.dump(token, f)
-        self.session.token = token
+            json.dump(token, f, indent=2)
+        print("✅ Access token saved to token.json")
         return token
 
-    def _gen_code_verifier(self):
-        alphabet = string.ascii_letters + string.digits + "-._~"
-        self.code_verifier = "".join(secrets.choice(alphabet) for _ in range(64))
-        return self.code_verifier
+    def load_token(self):
+        if os.path.exists("token.json"):
+            with open("token.json", "r") as f:
+                token = json.load(f)
+            self.session.token = token
+            return token
+        return None
 
-    # -------- API calls -------- #
-    def get_profile(self):
-        resp = self.session.get(f"{BASE_URL}/user/profile/basic")
+    # -------- WHOOP v2 API endpoints -------- #
+
+    def get_profile(self, full=False):
+        """Get user profile (basic or full)."""
+        url = f"{API_BASE_URL}/user/profile"
+        if not full:
+            url += "/basic"
+        resp = self.session.get(url)
         resp.raise_for_status()
         return resp.json()
 
     def get_workout_collection(self, start=None, end=None):
+        """Get workouts (optionally with start/end dates)."""
+        url = f"{API_BASE_URL}/activity/workout"
         params = {}
         if start:
             params["start"] = start
         if end:
             params["end"] = end
-        resp = self.session.get(f"{BASE_URL}/activity/workout", params=params)
+        resp = self.session.get(url, params=params)
         resp.raise_for_status()
         return resp.json()
 
     def get_sleep_collection(self, start=None, end=None):
+        """Get sleep data (optionally with start/end dates)."""
+        url = f"{API_BASE_URL}/activity/sleep"
         params = {}
         if start:
             params["start"] = start
         if end:
             params["end"] = end
-        resp = self.session.get(f"{BASE_URL}/activity/sleep", params=params)
+        resp = self.session.get(url, params=params)
         resp.raise_for_status()
         return resp.json()
 
     def get_recovery_collection(self, start=None, end=None):
+        """Get recovery data (optionally with start/end dates)."""
+        url = f"{API_BASE_URL}/recovery"
         params = {}
         if start:
             params["start"] = start
         if end:
             params["end"] = end
-        resp = self.session.get(f"{BASE_URL}/recovery", params=params)
+        resp = self.session.get(url, params=params)
         resp.raise_for_status()
         return resp.json()
