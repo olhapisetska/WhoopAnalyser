@@ -3,7 +3,7 @@ Analysis of Whoop trainings
 
 TO RUN:
 
-1. To edit .env.example file based on your CLIENT_ID and CLIENt_SECRET
+1. To edit .env.example file based on your WHOOP_CLIENT_ID, WHOOP_CLIENT_SECRET and WHOOP_REDIRECT_URI
 2. user.py
 3. whoop_client.py
 4. client_creation.py
