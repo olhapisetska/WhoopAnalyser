@@ -99,7 +99,7 @@ class WhoopClient:
         self._password = password
 
         self.session = OAuth2Session(
-            token_endpont=f"{AUTH_URL}/oauth/token",
+            token_endpoint=f"{AUTH_URL}/oauth/token",
             token_endpoint_auth_method=self.TOKEN_ENDPOINT_AUTH_METHOD,
         )
 
@@ -199,7 +199,7 @@ class WhoopClient:
                     }
                 }
         """
-        return self._make_request(method="GET", url_slug=f"v1/cycle/{cycle_id}")
+        return self._make_request(method="GET", url_slug=f"v2/cycle/{cycle_id}")
 
     def get_cycle_collection(
         self,
@@ -237,7 +237,7 @@ class WhoopClient:
 
         return self._make_paginated_request(
             method="GET",
-            url_slug="v1/cycle",
+            url_slug="v2/cycle",
             params={"start": start, "end": end, "limit": 25},
         )
 
@@ -266,7 +266,7 @@ class WhoopClient:
                 }
         """
         return self._make_request(
-            method="GET", url_slug=f"v1/cycle/{cycle_id}/recovery"
+            method="GET", url_slug=f"v2/cycle/{cycle_id}/recovery"
         )
 
     def get_recovery_collection(
@@ -305,7 +305,7 @@ class WhoopClient:
 
         return self._make_paginated_request(
             method="GET",
-            url_slug="v1/recovery",
+            url_slug="v2/recovery",
             params={"start": start, "end": end, "limit": 25},
         )
 
@@ -337,7 +337,7 @@ class WhoopClient:
                 }
         """
         return self._make_request(
-            method="GET", url_slug=f"v1/activity/sleep/{sleep_id}"
+            method="GET", url_slug=f"v2/activity/sleep/{sleep_id}"
         )
 
     def get_sleep_collection(
@@ -378,7 +378,7 @@ class WhoopClient:
 
         return self._make_paginated_request(
             method="GET",
-            url_slug="v1/activity/sleep",
+            url_slug="v2/activity/sleep",
             params={"start": start, "end": end, "limit": 25},
         )
 
@@ -413,7 +413,7 @@ class WhoopClient:
                 }
         """
         return self._make_request(
-            method="GET", url_slug=f"v1/activity/workout/{workout_id}"
+            method="GET", url_slug=f"v2/activity/workout/{workout_id}"
         )
 
     def get_workout_collection(
@@ -458,7 +458,7 @@ class WhoopClient:
 
         return self._make_paginated_request(
             method="GET",
-            url_slug="v1/activity/workout",
+            url_slug="v2/activity/workout",
             params={"start": start, "end": end, "limit": 25},
         )
 

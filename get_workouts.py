@@ -1,10 +1,10 @@
 import json
 from whoop import WhoopClient
 
-username = "olapisetska@gmail.com"
-password = "11072000Olha@"
+username = "USERNAME"
+password = "PASSWORD"
 
-start_date="2024-12-14 23:59:59.999999"
+start_date="2025-01-01 23:59:59.999999"
 
 print("Get workouts...")
 with WhoopClient(username, password) as client:
