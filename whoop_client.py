@@ -1,87 +1,78 @@
 import os
+import json
 import secrets
 import string
-import base64
-import hashlib
+import requests
+from urllib.parse import urlencode
 from authlib.integrations.requests_client import OAuth2Session
 
-# WHOOP OAuth2 endpoints
 AUTH_URL = "https://api.prod.whoop.com/oauth/oauth2/auth"
 TOKEN_URL = "https://api.prod.whoop.com/oauth/oauth2/token"
-API_BASE_URL = "https://api.prod.whoop.com"
+API_BASE_URL = "https://api.prod.whoop.com/developer/v1"
 
 class WhoopClient:
-    def __init__(self, client_id: str, client_secret: str, redirect_uri: str):
+    def __init__(self, client_id, client_secret, redirect_uri, scope=None):
         self.client_id = client_id
         self.client_secret = client_secret
         self.redirect_uri = redirect_uri
+        self.scope = scope or "offline read:profile read:workout read:sleep read:recovery"
 
-        # PKCE (Proof Key for Code Exchange)
-        self.code_verifier = self._generate_code_verifier()
-        self.code_challenge = self._generate_code_challenge(self.code_verifier)
-
-        # OAuth2 session
+        # Generate code_verifier + code_challenge for PKCE
+        self.code_verifier = ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(64))
         self.session = OAuth2Session(
             client_id=self.client_id,
             redirect_uri=self.redirect_uri,
-            scope="offline read:profile read:workout read:sleep read:recovery"
+            scope=self.scope,
+            code_challenge_method="S256",
+            code_verifier=self.code_verifier,
         )
 
-    def _generate_code_verifier(self, length: int = 128) -> str:
-        charset = string.ascii_letters + string.digits + "-._~"
-        return "".join(secrets.choice(charset) for _ in range(length))
+    def create_authorization_url(self):
+        uri, state = self.session.create_authorization_url(AUTH_URL)
+        return uri, state
 
-    def _generate_code_challenge(self, code_verifier: str) -> str:
-        digest = hashlib.sha256(code_verifier.encode("ascii")).digest()
-        return base64.urlsafe_b64encode(digest).rstrip(b"=").decode("ascii")
-
-    def get_authorization_url(self) -> str:
-        uri, state = self.session.create_authorization_url(
-            AUTH_URL,
-            code_challenge=self.code_challenge,
-            code_challenge_method="S256"
-        )
-        self.state = state
-        return uri
-
-    def fetch_token(self, authorization_response: str) -> dict:
-        """Exchange authorization code for access + refresh token"""
+    def fetch_token(self, authorization_response):
         token = self.session.fetch_token(
             url=TOKEN_URL,
             authorization_response=authorization_response,
             client_secret=self.client_secret,
             code_verifier=self.code_verifier,
-            client_secret_post=True  # 👈 fixes invalid_client
         )
+        with open("token.json", "w") as f:
+            json.dump(token, f, indent=2)
+        print("✅ Access token saved to token.json")
         return token
 
-    def refresh_token(self, refresh_token: str) -> dict:
-        """Refresh an expired access token"""
-        new_token = self.session.refresh_token(
-            url=TOKEN_URL,
-            refresh_token=refresh_token,
-            client_id=self.client_id,
-            client_secret=self.client_secret,
-            client_secret_post=True
-        )
-        return new_token
+    def load_token(self):
+        if os.path.exists("token.json"):
+            with open("token.json", "r") as f:
+                token = json.load(f)
+            self.session.token = token
+            return token
+        return None
 
-    def get_profile(self) -> dict:
-        resp = self.session.get(f"{API_BASE_URL}/developer/v1/user")
+    # -------- WHOOP v2 API endpoints -------- #
+
+    def get_profile(self):
+        url = f"{API_BASE_URL}/user"
+        resp = self.session.get(url)
         resp.raise_for_status()
         return resp.json()
 
-    def get_workout_collection(self) -> dict:
-        resp = self.session.get(f"{API_BASE_URL}/developer/v1/workout")
+    def get_workout_collection(self):
+        url = f"{API_BASE_URL}/activity"
+        resp = self.session.get(url)
         resp.raise_for_status()
         return resp.json()
 
-    def get_sleep_collection(self) -> dict:
-        resp = self.session.get(f"{API_BASE_URL}/developer/v1/sleep")
+    def get_sleep_collection(self):
+        url = f"{API_BASE_URL}/sleep"
+        resp = self.session.get(url)
         resp.raise_for_status()
         return resp.json()
 
-    def get_recovery_collection(self) -> dict:
-        resp = self.session.get(f"{API_BASE_URL}/developer/v1/recovery")
+    def get_recovery_collection(self):
+        url = f"{API_BASE_URL}/recovery"
+        resp = self.session.get(url)
         resp.raise_for_status()
         return resp.json()
