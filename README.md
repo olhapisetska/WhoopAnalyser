@@ -1,5 +1,5 @@
 # WhoopAnalyser
-Analyse of all your Whoop trainings
+Analysis of Whoop trainings
 
 TO RUN:
 
