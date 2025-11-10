@@ -1,0 +1,13 @@
+{
+    "summary_stats": {
+        "total_workouts": 1000.0,
+        "avg_strain": 11.4,
+        "avg_hr": 135.4,
+        "max_hr_overall": 200.0,
+        "total_kcal": 306394.48
+    },
+    "workouts_by_sport": {
+        "functional-fitness": 700,
+        "walking": 300
+    }
+}
