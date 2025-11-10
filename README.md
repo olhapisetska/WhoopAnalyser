@@ -9,3 +9,4 @@ TO RUN:
 4. client_creation.py
 5. get_workouts.py
 6. analyze_workouts.py
+7. 100get_workouts can be run instead of instead of 5. get_workouts.py and 6. analyze_workouts.py
